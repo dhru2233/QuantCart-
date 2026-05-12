@@ -75,3 +75,19 @@ a{text-decoration:none;color:inherit}
 
 /* Countdown ring */
 .countdown-ring{filter:drop-shadow(0 0 8px rgba(248,194,0,.4))}
+.pulse-anim {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #ffeb3b; /* Blinkit Yellow */
+  font-weight: 900;
+  font-size: 24px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.5; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.5; transform: scale(0.95); }
+}
