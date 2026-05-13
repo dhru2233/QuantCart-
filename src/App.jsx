@@ -498,7 +498,8 @@ function LoginPage({ onLogin }) {
    ADMIN PANEL
 ═══════════════════════════════════════════════════════════════════ */
 function AdminPanel({ user, store }) {
-  const { inv, orders, notifications, adminToast, pushN } = store;
+  const { inv, orders, users, notifications, adminToast, pushN } = store;
+
   const [tab, setTab] = useState("live");
   const [liveOn, setLiveOn] = useState(true);
   const [selOrder, setSelOrder] = useState(null);
@@ -587,6 +588,8 @@ function AdminPanel({ user, store }) {
   const NAVS = [
     { id: "live", label: "Live Orders", badge: active.length },
     { id: "inventory", label: "Inventory", badge: outOfStock.length + lowStock.length },
+    { id: "customers", label: "Customers", badge: users.length },
+    { id: "stores", label: "Local Stores", badge: 1 },
     { id: "analytics", label: "Analytics", badge: 0 },
     { id: "log", label: "Activity", badge: 0 },
   ];
@@ -722,7 +725,27 @@ function AdminPanel({ user, store }) {
         {/* ANALYTICS */}
         {tab === "analytics" && (
           <div>
-            <h2 style={{ fontSize: 17, fontWeight: 800, color: BK, marginBottom: 14 }}>Analytics</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ fontSize: 17, fontWeight: 800, color: BK }}>Analytics Dashboard</h2>
+              <div style={{ fontSize: 11, color: G3 }}>Last updated: {ts()}</div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 16 }}>
+              <div style={card}>
+                <div style={{ fontSize: 10, color: G3, fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>Total Revenue</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: GN }}>{rupee(revenue)}</div>
+                <div style={{ fontSize: 10, color: G3, marginTop: 4 }}>from {delivered.length} orders</div>
+              </div>
+              <div style={card}>
+                <div style={{ fontSize: 10, color: G3, fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>Avg Order Value</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: PU }}>{rupee(delivered.length ? Math.round(revenue / delivered.length) : 0)}</div>
+                <div style={{ fontSize: 10, color: G3, marginTop: 4 }}>per successful delivery</div>
+              </div>
+              <div style={card}>
+                <div style={{ fontSize: 10, color: G3, fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>Inventory Value</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: BL }}>{rupee(inv.reduce((a, i) => a + (i.qty * i.price), 0))}</div>
+                <div style={{ fontSize: 10, color: G3, marginTop: 4 }}>across {inv.length} items</div>
+              </div>
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div style={card}>
                 <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12, color: PU }}>Inventory Health</div>
@@ -734,13 +757,65 @@ function AdminPanel({ user, store }) {
                 ))}
               </div>
               <div style={card}>
-                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12, color: PU }}>Revenue</div>
-                {[{ l: "Inventory Cost", v: rupee(inv.reduce((a, i) => a + (i.qty || 0) * (i.cost || 0), 0)), c: PU }, { l: "Stock Value", v: rupee(inv.reduce((a, i) => a + (i.qty || 0) * (i.price || 0), 0)), c: GN }, { l: "Today's Revenue", v: rupee(revenue), c: BL }].map(r => (
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12, color: PU }}>Stock Metrics</div>
+                {[{ l: "Inventory Cost", v: rupee(inv.reduce((a, i) => a + (i.qty || 0) * (i.cost || 0), 0)), c: PU }, { l: "Potential Sales", v: rupee(inv.reduce((a, i) => a + (i.qty || 0) * (i.price || 0), 0)), c: GN }, { l: "Target Fill Rate", v: "98.5%", c: BL }].map(r => (
                   <div key={r.l} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: `1px solid ${G1}`, fontSize: 13 }}>
                     <span style={{ color: G3 }}>{r.l}</span><span style={{ fontWeight: 700, color: r.c }}>{r.v}</span>
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* CUSTOMERS */}
+        {tab === "customers" && (
+          <div>
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: BK, marginBottom: 14 }}>Customers ({users.length})</h2>
+            <div style={{ display: "grid", gap: 10 }}>
+              {users.map(u => (
+                <div key={u.fid} style={{ ...card, display: "flex", gap: 12, alignItems: "center" }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg,#B44FFF,#7B2FE0)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: WH, fontWeight: 900 }}>{u.name?.charAt(0) || "U"}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{u.name || "Unknown User"}</div>
+                    <div style={{ color: G3, fontSize: 11 }}>{u.email} · {u.role === "admin" ? "🛡️ Admin" : "🛒 Customer"}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 10, color: G3 }}>Orders</div>
+                    <div style={{ fontWeight: 800, color: PU }}>{orders.filter(o => o.userId === u.fid).length}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* STORES */}
+        {tab === "stores" && (
+          <div>
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: BK, marginBottom: 14 }}>Dark Stores</h2>
+            <div style={{ ...card, borderLeft: `4px solid ${ACCENT}`, marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 15 }}>{DARK_STORE.name}</div>
+                  <div style={{ color: G3, fontSize: 12 }}>{DARK_STORE.address}</div>
+                </div>
+                <span style={{ ...pill(GN), height: "fit-content" }}>Active</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div style={{ background: G1, padding: 10, borderRadius: 10 }}>
+                  <div style={{ fontSize: 10, color: G3, textTransform: "uppercase" }}>Current Capacity</div>
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>{Math.round((inv.reduce((a, i) => a + i.qty, 0) / 5000) * 100)}% Used</div>
+                </div>
+                <div style={{ background: G1, padding: 10, borderRadius: 10 }}>
+                  <div style={{ fontSize: 10, color: G3, textTransform: "uppercase" }}>Orders Today</div>
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>{orders.length}</div>
+                </div>
+              </div>
+            </div>
+            <div style={{ background: "rgba(180,79,255,0.05)", border: `1.5px dashed ${G2}`, borderRadius: 16, padding: 30, textAlign: "center" }}>
+              <div style={{ fontSize: 30, marginBottom: 8 }}>🏪</div>
+              <div style={{ color: G3, fontSize: 13, fontWeight: 600 }}>Expansion Mode: Scaling to South Delhi next month</div>
             </div>
           </div>
         )}
@@ -1205,6 +1280,7 @@ function CustomerPanel({ user, store }) {
                       <div style={{ paddingBottom: i < STATUS_FLOW.length - 1 ? 14 : 0, paddingTop: 4, flex: 1 }}>
                         <div style={{ fontWeight: curr ? 700 : 600, fontSize: 13, color: done ? BK : G3 }}>{SM[s].label}</div>
                         {logEntry && <div style={{ fontSize: 11, color: G3, marginTop: 1 }}>{logEntry.time}</div>}
+
                         {curr && <div style={{ fontSize: 10, color: SM[s].color, fontWeight: 600, marginTop: 2, animation: "pulse 1.5s ease infinite" }}>● Live</div>}
                       </div>
                     </div>
@@ -1225,18 +1301,6 @@ function CustomerPanel({ user, store }) {
               <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: 15, paddingTop: 10 }}><span>Total</span><span style={{ color: PU }}>{rupee(o.total)}</span></div>
               <div style={{ marginTop: 4, fontSize: 11, color: G3 }}>Paid via {o.paymentMethod}</div>
             </div>
-
-            {/* Log */}
-            {(o.log || []).length > 0 && (
-              <div style={{ ...card, marginBottom: 14 }}>
-                <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 9, color: G4, textTransform: "uppercase", letterSpacing: ".5px" }}>Updates</div>
-                {[...(o.log || [])].reverse().map((l, i) => (
-                  <div key={i} style={{ display: "flex", gap: 9, marginBottom: 5, fontSize: 12 }}>
-                    <span style={{ color: SM[l.status]?.color, fontWeight: 600, minWidth: 68 }}>{l.time}</span>
-                    <span style={{ color: G4 }}>{SM[l.status]?.icon} {l.msg}</span>
-                  </div>
-                ))}
-              </div>
             )}
 
             {/* Delivered */}
@@ -1257,10 +1321,11 @@ function CustomerPanel({ user, store }) {
 
 /* ═══════════════════════════════════════════════════════════════════
    SHARED STORE
-═══════════════════════════════════════════════════════════════════ */
+ ═══════════════════════════════════════════════════════════════════ */
 function useSharedStore() {
   const [inv, setInv] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [users, setUsers] = useState([]);
   const [notifications, setNotifs] = useState([]);
   const [adminToast, setAToast] = useState(null);
   const [custToast, setCToast] = useState(null);
@@ -1288,13 +1353,15 @@ function useSharedStore() {
       snap => { setOrders(snap.docs.map(d => ({ fid: d.id, ...d.data() }))); setLoading(false); },
       err => { console.error("orders listener:", err); setLoading(false); }
     );
-    return () => { uI(); uO(); };
+    const uU = onSnapshot(collection(db, "users"), snap => {
+      setUsers(snap.docs.map(d => ({ fid: d.id, ...d.data() })));
+    });
+    return () => { uI(); uO(); uU(); };
   }, []);
 
-  return { inv, orders, notifications, adminToast, custToast, pushN, loading };
+  return { inv, orders, users, notifications, adminToast, custToast, pushN, loading };
 }
 
-/* ═══════════════════════════════════════════════════════════════════
    ROOT APP
 ═══════════════════════════════════════════════════════════════════ */
 export default function App() {
