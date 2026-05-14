@@ -628,7 +628,7 @@ function AdminPanel({ user, store }) {
     { id: "live", label: "Live Orders", badge: active.length },
     { id: "inventory", label: "Inventory", badge: outOfStock.length + lowStock.length },
     { id: "customers", label: "Customers", badge: users.length },
-    { id: "stores", label: "Local Stores", badge: 1 },
+    { id: "stores", label: "Dark Stores", badge: 1 },
     { id: "analytics", label: "Analytics", badge: 0 },
     { id: "log", label: "Activity", badge: 0 },
   ];
