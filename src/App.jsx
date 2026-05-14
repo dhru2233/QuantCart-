@@ -283,9 +283,32 @@ function PayModal({ total, onSuccess, onClose }) {
   const finalTotal = total + Math.round(total * 0.02);
 
   const handleRazorpay = () => {
-    // We simulate the Razorpay flow since client-side checkout 
-    // without a backend-generated order_id causes errors with most keys.
-    process("Razorpay");
+    const key = import.meta.env.VITE_RAZORPAY_KEY || "rzp_test_K2v1Yx5v7x5v7x"; // Fallback demo key
+
+    const options = {
+      key,
+      amount: finalTotal * 100,
+      currency: "INR",
+      name: "QuantCart",
+      description: "Grocery Order Payment",
+      handler: r => { 
+        setStep("done"); 
+        setTimeout(() => onSuccess("Razorpay", finalTotal), 1200); 
+      },
+      prefill: { email: "customer@example.com", contact: "9999999999" },
+      theme: { color: "#B44FFF" }
+    };
+
+    try {
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function (response) {
+        alert("Payment failed: Please ensure you are using a valid Razorpay Test Key in your environment variables. Error: " + response.error.description);
+      });
+      rzp.open();
+    } catch (err) {
+      console.error("Razorpay error:", err);
+      alert("Could not load Razorpay. Please check your internet connection or API keys.");
+    }
   };
 
   const process = method => {
