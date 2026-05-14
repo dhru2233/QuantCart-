@@ -80,7 +80,8 @@ a{text-decoration:none;color:inherit}
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #ffeb3b; /* Blinkit Yellow */
+  background: #0A0A12; /* Deep space black background */
+  color: #B44FFF; /* Neon purple text */
   font-weight: 900;
   font-size: 24px;
   animation: pulse 1.5s infinite;

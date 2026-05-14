@@ -628,7 +628,7 @@ function AdminPanel({ user, store }) {
     { id: "live", label: "Live Orders", badge: active.length },
     { id: "inventory", label: "Inventory", badge: outOfStock.length + lowStock.length },
     { id: "customers", label: "Customers", badge: users.length },
-    { id: "stores", label: "Dark Stores", badge: 1 },
+    { id: "stores", label: "Dark Stores", badge: 2 },
     { id: "analytics", label: "Analytics", badge: 0 },
     { id: "log", label: "Activity", badge: 0 },
   ];
@@ -833,29 +833,55 @@ function AdminPanel({ user, store }) {
         {/* STORES */}
         {tab === "stores" && (
           <div>
-            <h2 style={{ fontSize: 17, fontWeight: 800, color: BK, marginBottom: 14 }}>Dark Stores</h2>
-            <div style={{ ...card, borderLeft: `4px solid ${ACCENT}`, marginBottom: 16 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: 15 }}>{DARK_STORE.name}</div>
-                  <div style={{ color: G3, fontSize: 12 }}>{DARK_STORE.address}</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <h2 style={{ fontSize: 17, fontWeight: 800, color: BK, margin: 0 }}>Dark Stores</h2>
+              <button style={{ ...btn(PU, WH), padding: "6px 12px", fontSize: 12, borderRadius: 8 }}>+ Add Store</button>
+            </div>
+            
+            <div style={{ display: "grid", gap: 14 }}>
+              <div style={{ ...card, borderLeft: `4px solid ${ACCENT}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 15 }}>{DARK_STORE.name}</div>
+                    <div style={{ color: G3, fontSize: 12 }}>{DARK_STORE.address}</div>
+                  </div>
+                  <span style={{ ...pill(GN), height: "fit-content" }}>Active</span>
                 </div>
-                <span style={{ ...pill(GN), height: "fit-content" }}>Active</span>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div style={{ background: G1, padding: 10, borderRadius: 10 }}>
+                    <div style={{ fontSize: 10, color: G3, textTransform: "uppercase" }}>Current Capacity</div>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>{Math.round((inv.reduce((a, i) => a + i.qty, 0) / 5000) * 100)}% Used</div>
+                  </div>
+                  <div style={{ background: G1, padding: 10, borderRadius: 10 }}>
+                    <div style={{ fontSize: 10, color: G3, textTransform: "uppercase" }}>Orders Today</div>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>{orders.length}</div>
+                  </div>
+                </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <div style={{ background: G1, padding: 10, borderRadius: 10 }}>
-                  <div style={{ fontSize: 10, color: G3, textTransform: "uppercase" }}>Current Capacity</div>
-                  <div style={{ fontWeight: 700, fontSize: 13 }}>{Math.round((inv.reduce((a, i) => a + i.qty, 0) / 5000) * 100)}% Used</div>
+
+              <div style={{ ...card, borderLeft: `4px solid ${PU}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 15 }}>South Delhi Hub (New)</div>
+                    <div style={{ color: G3, fontSize: 12 }}>Saket, Sector 4, New Delhi</div>
+                  </div>
+                  <span style={{ ...pill(PU), height: "fit-content", background: "rgba(180,79,255,0.1)", color: PU }}>Onboarding</span>
                 </div>
-                <div style={{ background: G1, padding: 10, borderRadius: 10 }}>
-                  <div style={{ fontSize: 10, color: G3, textTransform: "uppercase" }}>Orders Today</div>
-                  <div style={{ fontWeight: 700, fontSize: 13 }}>{orders.length}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div style={{ background: G1, padding: 10, borderRadius: 10 }}>
+                    <div style={{ fontSize: 10, color: G3, textTransform: "uppercase" }}>Current Capacity</div>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>0% Used</div>
+                  </div>
+                  <div style={{ background: G1, padding: 10, borderRadius: 10 }}>
+                    <div style={{ fontSize: 10, color: G3, textTransform: "uppercase" }}>Status</div>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>Pending Inventory</div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div style={{ background: "rgba(180,79,255,0.05)", border: `1.5px dashed ${G2}`, borderRadius: 16, padding: 30, textAlign: "center" }}>
-              <div style={{ fontSize: 30, marginBottom: 8 }}>🏪</div>
-              <div style={{ color: G3, fontSize: 13, fontWeight: 600 }}>Expansion Mode: Scaling to South Delhi next month</div>
+            
+            <div style={{ background: "rgba(180,79,255,0.05)", border: `1.5px dashed ${G2}`, borderRadius: 16, padding: 20, textAlign: "center", marginTop: 14 }}>
+              <div style={{ color: G3, fontSize: 13, fontWeight: 600 }}>Expansion Mode: Targeting 5 hubs by end of Q4 🚀</div>
             </div>
           </div>
         )}
