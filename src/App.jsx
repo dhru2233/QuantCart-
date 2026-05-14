@@ -211,26 +211,31 @@ function RiderMap({ order, destPos }) {
   const [pos, setPos] = useState(DARK_STORE_POS);
   const step = useRef(0);
   const STEPS = 30;
+  
+  // Validate destPos before using it
+  const validDestPos = (destPos && destPos[0] !== null && destPos[1] !== null) ? destPos : DARK_STORE_POS;
+  
   useEffect(() => {
     if (order.statusIdx < 4) { setPos(DARK_STORE_POS); step.current = 0; return; }
-    if (order.statusIdx >= 5) { setPos(destPos); return; }
+    if (order.statusIdx >= 5) { setPos(validDestPos); return; }
     step.current = 0;
     const iv = setInterval(() => {
       step.current = Math.min(step.current + 1, STEPS);
       const t = step.current / STEPS;
-      setPos([DARK_STORE_POS[0] + (destPos[0] - DARK_STORE_POS[0]) * t, DARK_STORE_POS[1] + (destPos[1] - DARK_STORE_POS[1]) * t]);
+      setPos([DARK_STORE_POS[0] + (validDestPos[0] - DARK_STORE_POS[0]) * t, DARK_STORE_POS[1] + (validDestPos[1] - DARK_STORE_POS[1]) * t]);
       if (step.current >= STEPS) clearInterval(iv);
     }, 200);
     return () => clearInterval(iv);
-  }, [order.statusIdx, destPos]);
+  }, [order.statusIdx, validDestPos]);
+  
   return (
     <div style={{ borderRadius: 16, overflow: "hidden", border: `1px solid ${G2}`, boxShadow: "0 4px 20px rgba(180,79,255,0.15)" }}>
-      <MapContainer center={DARK_STORE_POS} zoom={13} style={{ height: 220, width: "100%" }} zoomControl={false} scrollWheelZoom={false}>
+      <MapContainer key={`map-${order.id}`} center={DARK_STORE_POS} zoom={13} style={{ height: 220, width: "100%" }} zoomControl={false} scrollWheelZoom={false}>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <Marker position={DARK_STORE_POS} icon={ICONS.store} />
-        <Marker position={destPos} icon={ICONS.home} />
+        <Marker position={validDestPos} icon={ICONS.home} />
         <Marker position={pos} icon={ICONS.rider} />
-        <Polyline positions={[DARK_STORE_POS, destPos]} pathOptions={{ color: ACCENT, weight: 3, dashArray: "8 6", opacity: .9 }} />
+        <Polyline positions={[DARK_STORE_POS, validDestPos]} pathOptions={{ color: ACCENT, weight: 3, dashArray: "8 6", opacity: .9 }} />
         <FlyTo pos={pos} />
       </MapContainer>
       <div style={{ padding: "6px 12px", background: WH, fontSize: 11, color: G3, display: "flex", gap: 14, justifyContent: "center" }}>
@@ -278,19 +283,9 @@ function PayModal({ total, onSuccess, onClose }) {
   const finalTotal = total + Math.round(total * 0.02);
 
   const handleRazorpay = () => {
-    const key = import.meta.env.VITE_RAZORPAY_KEY || "rzp_test_K2v1Yx5v7x5v7x"; // Fallback to a demo key pattern
-    const options = {
-      key,
-      amount: finalTotal * 100,
-      currency: "INR",
-      name: "QuantCart",
-      description: "Grocery Order Payment",
-      handler: r => { setStep("done"); setTimeout(() => onSuccess("Razorpay", finalTotal), 1200); },
-      prefill: { email: "customer@example.com", contact: "9999999999" },
-      theme: { color: "#B44FFF" }
-    };
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+    // We simulate the Razorpay flow since client-side checkout 
+    // without a backend-generated order_id causes errors with most keys.
+    process("Razorpay");
   };
 
   const process = method => {
@@ -579,10 +574,10 @@ function AdminPanel({ user, store }) {
 
   const saveInv = async () => {
     if (!form.name || !form.sku || !form.price || !form.qty) { pushN("Fill required fields", "danger", "admin"); return; }
-    const e = { ...form, price: +form.price, cost: +form.cost || 0, qty: +form.qty, msL: +form.msL || 10 };
+    const e = { ...form, price: +form.price, cost: +form.cost || 0, qty: +form.qty, msL: +form.msL || 10, dispatchFrom: DARK_STORE.name, storeLocation: DARK_STORE.pos, updatedAt: serverTimestamp() };
     try {
       if (editId) { await setDoc(doc(db, "inventory", String(editId)), e, { merge: true }); }
-      else { const nid = Date.now(); await setDoc(doc(db, "inventory", String(nid)), { ...e, id: nid }); }
+      else { const nid = Date.now(); await setDoc(doc(db, "inventory", String(nid)), { ...e, id: nid, createdAt: serverTimestamp() }); }
       pushN(editId ? "Product updated ✅" : "Product added ✅", "success", "admin");
       setShowForm(false); setEditId(null);
     } catch (er) { pushN("Error: " + er.message, "danger", "admin"); }
@@ -690,6 +685,7 @@ function AdminPanel({ user, store }) {
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                    {o.dispatchFrom && <span style={{ ...pill(GN, BK), fontSize: 10 }}>🏪 {o.dispatchFrom.split("–")[0].trim()}</span>}
                   </div>
                   <Tracker order={o} />
                 </div>
@@ -727,7 +723,8 @@ function AdminPanel({ user, store }) {
                     </div>
                     <div style={{ padding: 10 }}>
                       <div style={{ fontWeight: 700, fontSize: 12, color: BK, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</div>
-                      <div style={{ fontSize: 10, color: G3, marginBottom: 8 }}>{item.cat} · <strong style={{ color: st === "out" ? RD : st === "low" ? "#D97706" : GN }}>Qty: {item.qty}</strong></div>
+                      <div style={{ fontSize: 10, color: G3, marginBottom: 3 }}>{item.cat} · {item.dispatchFrom ? `📦 ${item.dispatchFrom.split("–")[0].trim()}` : "Warehouse"}</div>
+                      <div style={{ fontSize: 9, color: G3, marginBottom: 8 }}>Qty: <strong style={{ color: st === "out" ? RD : st === "low" ? "#D97706" : GN }}>{item.qty}</strong></div>
                       <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 8, color: PU }}>{rupee(item.price)}</div>
                       <div style={{ display: "flex", gap: 4 }}>
                         <button onClick={() => { setStockMod(item); setSAdj({ type: "IN", qty: "", note: "" }); }} style={{ ...btn(GN, WH, "4px 0"), flex: 1, fontSize: 10, borderRadius: 7 }}>Stock</button>
@@ -884,6 +881,12 @@ function AdminPanel({ user, store }) {
                   <a href={`tel:${o.rider.phone}`} style={{ color: BL, textDecoration: "none", fontWeight: 700 }}>📞 Call</a>
                 </div>
               )}
+              {o.dispatchFrom && (
+                <div style={{ marginTop: 10, background: "linear-gradient(135deg,rgba(0,229,176,0.08),rgba(180,79,255,0.08))", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: G4, border: `1px solid ${G2}` }}>
+                  <div style={{ fontWeight: 700, color: GN, marginBottom: 3 }}>🏪 Dispatch Store</div>
+                  <div>{o.dispatchFrom}</div>
+                </div>
+              )}
               {o.statusIdx < STATUS_FLOW.length - 1 && (
                 <div style={{ marginTop: 16, borderTop: `1px solid ${G2}`, paddingTop: 16 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: G3, marginBottom: 10, textTransform: "uppercase" }}>Manual Controls</div>
@@ -942,6 +945,7 @@ function AdminPanel({ user, store }) {
                 <button key={t} onClick={() => setSAdj(p => ({ ...p, type: t }))} style={{ ...btn(sAdj.type === t ? bg : G1, sAdj.type === t ? fg : G4, "8px 0"), flex: 1, border: `1px solid ${sAdj.type === t ? bg : G2}`, fontWeight: 700, borderRadius: 8 }}>{t}</button>
               ))}
             </div>
+            <input type="number" value={sAdj.qty} onChange={e => setSAdj(p => ({ ...p, qty: e.target.value }))} placeholder="Quantity" style={{ ...inp, marginBottom: 12 }} />
             <input value={sAdj.note} onChange={e => setSAdj(p => ({ ...p, note: e.target.value }))} placeholder="Reason (optional)" style={{ ...inp, marginBottom: 16 }} />
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={adjStock} style={{ ...btn(sAdj.type === "IN" ? GN : sAdj.type === "OUT" ? RD : "#F59E0B", sAdj.type === "DAMAGE" ? BK : WH, "11px 0"), flex: 1, fontWeight: 700, borderRadius: 8 }}>Confirm</button>
@@ -994,13 +998,37 @@ function CustomerPanel({ user, store }) {
     setShowPay(false);
     if (!pending) return;
     const oid = `ORD-${rand(300, 999)}`, rider = pick(RIDERS);
-    const o = { id: oid, customer: user.displayName || user.email, userId: user.uid, area: geo.address.split(",")[0] || "Delhi", items: pending, total: chargedTotal, status: "placed", statusIdx: 0, rider, time: ts(), eta: rand(8, 14), paymentMethod: method, isCustomer: true, log: [{ status: "placed", time: ts(), msg: "Your order has been placed!" }], createdAt: serverTimestamp() };
+    const o = { 
+      id: oid, 
+      customer: user.displayName || user.email, 
+      userId: user.uid, 
+      area: geo.address.split(",")[0] || "Delhi", 
+      items: pending, 
+      total: chargedTotal, 
+      status: "placed", 
+      statusIdx: 0, 
+      rider, 
+      time: ts(), 
+      eta: rand(8, 14), 
+      paymentMethod: method, 
+      isCustomer: true, 
+      dispatchFrom: DARK_STORE.name,
+      dispatchLocation: DARK_STORE.pos,
+      log: [{ status: "placed", time: ts(), msg: "Your order has been placed!" }], 
+      createdAt: serverTimestamp() 
+    };
     try {
       const ref = await addDoc(collection(db, "orders"), o);
-      pending.forEach(async itm => { const ii = inv.find(i => i.sku === itm.sku); if (ii) await updateDoc(doc(db, "inventory", ii.fid), { qty: Math.max(0, ii.qty - itm.qty) }); });
+      pending.forEach(async itm => { 
+        const ii = inv.find(i => i.sku === itm.sku); 
+        if (ii) {
+          const newQty = Math.max(0, ii.qty - itm.qty);
+          await updateDoc(doc(db, "inventory", ii.fid), { qty: newQty, updatedAt: serverTimestamp() });
+        }
+      });
       setMyIds(p => [oid, ...p]); setCart([]); setPending(null);
       setTrackId(oid); setPage("tracking");
-      pushN(`✅ Order ${oid} placed! ETA ~${o.eta} mins`, "success", "cust");
+      pushN(`✅ Order ${oid} placed! Dispatching from ${DARK_STORE.name}. ETA ~${o.eta} mins`, "success", "cust");
       scheduleOrderAdvancement(ref.id, ns => { if (ns !== "error") pushN(`${SM[ns]?.icon || ""} ${oid}: ${SM[ns]?.msg || ns}`, "info", "cust"); });
     } catch (e) { pushN("Order failed: " + e.message, "danger", "cust"); }
   };
