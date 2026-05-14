@@ -277,6 +277,22 @@ function PayModal({ total, onSuccess, onClose }) {
   const [card, setCard] = useState({ num: "", exp: "", cvv: "" });
   const finalTotal = total + Math.round(total * 0.02);
 
+  const handleRazorpay = () => {
+    const key = import.meta.env.VITE_RAZORPAY_KEY || "rzp_test_K2v1Yx5v7x5v7x"; // Fallback to a demo key pattern
+    const options = {
+      key,
+      amount: finalTotal * 100,
+      currency: "INR",
+      name: "QuantCart",
+      description: "Grocery Order Payment",
+      handler: r => { setStep("done"); setTimeout(() => onSuccess("Razorpay", finalTotal), 1200); },
+      prefill: { email: "customer@example.com", contact: "9999999999" },
+      theme: { color: "#B44FFF" }
+    };
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
+
   const process = method => {
     setStep("processing");
     setTimeout(() => { setStep("done"); setTimeout(() => onSuccess(method, finalTotal), 1200); }, 2000);
@@ -298,11 +314,16 @@ function PayModal({ total, onSuccess, onClose }) {
           <div style={{ padding: 22 }}>
             <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 14, color: BK }}>Choose payment method</div>
             {[
+              { id: "razorpay", icon: "🚀", label: "Razorpay (Credit/Debit/UPI)", sub: "Secure, real-time payment", accent: "#3395FF" },
               { id: "upi", icon: "📱", label: "UPI / GPay / PhonePe", sub: "Instant, no charges", accent: "#B44FFF" },
               { id: "card", icon: "💳", label: "Credit / Debit Card", sub: "Visa, Mastercard, RuPay", accent: "#4FC3FF" },
               { id: "cod", icon: "💵", label: "Cash on Delivery", sub: "Pay when delivered", accent: "#00E5B0" },
             ].map(m => (
-              <div key={m.id} onClick={() => m.id === "cod" ? process("COD") : setStep(m.id)}
+              <div key={m.id} onClick={() => {
+                if (m.id === "cod") process("COD");
+                else if (m.id === "razorpay") handleRazorpay();
+                else setStep(m.id);
+              }}
                 style={{
                   display: "flex", gap: 14, alignItems: "center", padding: "12px 14px", borderRadius: 14,
                   border: `1.5px solid ${G2}`, marginBottom: 9, cursor: "pointer", transition: "all .2s"
@@ -1404,9 +1425,9 @@ export default function App() {
       ) : (
         <CustomerPanel user={authUser} store={store} />
       )}
-      {authUser && (
+      {authUser && userRole === "admin" && (
         <div style={{ position: "fixed", bottom: 20, left: 20, zIndex: 9999 }}>
-          <button onClick={() => setUserRole(userRole === "admin" ? "customer" : "admin")}
+          <button onClick={() => setUserRole(prev => prev === "admin" ? "customer" : "admin")}
             style={{ ...btn("linear-gradient(135deg,#1E1A3A,#2D1B5E)", WH, "10px 18px"), boxShadow: "0 6px 22px rgba(180,79,255,0.45)", borderRadius: 30, fontSize: 11, border: "2px solid rgba(180,79,255,0.5)" }}>
             🔄 Switch to {userRole === "admin" ? "Customer" : "Admin"} View
           </button>
