@@ -669,7 +669,6 @@ function AdminPanel({ user, store }) {
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-                    {(o.items || []).map(i => <span key={i.sku} style={{ background: G1, border: `1px solid ${G2}`, borderRadius: 6, padding: "2px 8px", fontSize: 11, color: G4 }}>{i.emoji} {i.name} ×{i.qty}</span>)}
                   </div>
                   <Tracker order={o} />
                 </div>
@@ -852,7 +851,6 @@ function AdminPanel({ user, store }) {
                 {(o.items || []).map(i => (
                   <div key={i.sku} style={{ display: "flex", justifyContent: "space-between", background: G1, borderRadius: 8, padding: "8px 12px", marginBottom: 6, fontSize: 13 }}>
                     <span style={{ color: G4 }}>{i.emoji} {i.name} ×{i.qty}</span>
-                    <span style={{ fontWeight: 700 }}>{rupee(i.qty * i.price)}</span>
                   </div>
                 ))}
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: 15, padding: "11px 0", borderTop: `1px solid ${G2}` }}>
@@ -923,7 +921,6 @@ function AdminPanel({ user, store }) {
                 <button key={t} onClick={() => setSAdj(p => ({ ...p, type: t }))} style={{ ...btn(sAdj.type === t ? bg : G1, sAdj.type === t ? fg : G4, "8px 0"), flex: 1, border: `1px solid ${sAdj.type === t ? bg : G2}`, fontWeight: 700, borderRadius: 8 }}>{t}</button>
               ))}
             </div>
-            <input type="number" min="1" value={sAdj.qty} onChange={e => setSAdj(p => ({ ...p, qty: e.target.value }))} placeholder="Quantity" style={{ ...inp, marginBottom: 9 }} />
             <input value={sAdj.note} onChange={e => setSAdj(p => ({ ...p, note: e.target.value }))} placeholder="Reason (optional)" style={{ ...inp, marginBottom: 16 }} />
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={adjStock} style={{ ...btn(sAdj.type === "IN" ? GN : sAdj.type === "OUT" ? RD : "#F59E0B", sAdj.type === "DAMAGE" ? BK : WH, "11px 0"), flex: 1, fontWeight: 700, borderRadius: 8 }}>Confirm</button>
@@ -1137,7 +1134,6 @@ function CustomerPanel({ user, store }) {
                   <span style={{ fontSize: 22, fontWeight: 900, color: PU }}>{rupee(item.price)}</span>
                   <span style={{ fontSize: 11, color: GN, fontWeight: 600 }}>{item.qty} in stock</span>
                 </div>
-                <div style={{ background: "linear-gradient(135deg,rgba(180,79,255,0.08),rgba(79,195,255,0.05))", borderRadius: 10, padding: "9px 13px", fontSize: 12, color: PU, marginBottom: 14, border: `1px solid ${G2}` }}>⚡ Quantum delivery in ~{rand(8, 14)} minutes</div>
                 {inCart ? (
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 22, background: "linear-gradient(135deg,#B44FFF,#7B2FE0)", borderRadius: 14, padding: "14px 18px", boxShadow: "0 6px 20px rgba(180,79,255,0.4)" }}>
                     <button onClick={() => changeQty(item.sku, -1)} style={{ ...btn("rgba(255,255,255,0.15)", WH, "0 14px"), fontSize: 22, fontWeight: 900, borderRadius: 8 }}>−</button>
@@ -1301,9 +1297,9 @@ function CustomerPanel({ user, store }) {
               <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: 15, paddingTop: 10 }}><span>Total</span><span style={{ color: PU }}>{rupee(o.total)}</span></div>
               <div style={{ marginTop: 4, fontSize: 11, color: G3 }}>Paid via {o.paymentMethod}</div>
             </div>
-            )}
 
             {/* Delivered */}
+
             {isDelivered && (
               <div style={{ background: "linear-gradient(135deg,rgba(0,229,176,0.1),rgba(180,79,255,0.07))", borderRadius: 18, padding: 24, textAlign: "center", border: `2px solid ${GN}`, boxShadow: `0 8px 28px rgba(0,229,176,0.15)` }}>
                 <div style={{ fontSize: 48, marginBottom: 10 }}>🎉</div>
@@ -1362,8 +1358,9 @@ function useSharedStore() {
   return { inv, orders, users, notifications, adminToast, custToast, pushN, loading };
 }
 
+/* ═══════════════════════════════════════════════════════════════════
    ROOT APP
-═══════════════════════════════════════════════════════════════════ */
+ ═══════════════════════════════════════════════════════════════════ */
 export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
